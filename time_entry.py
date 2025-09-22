@@ -71,9 +71,12 @@ def create_time_entry(entry, week_start, clockify_api_key, commit):
     end_time = entry_date.replace(
         hour=entry["end"][0], minute=entry["end"][1], second=0, microsecond=0
     )
+    # Convert to Eastern Time (UTC-4)
+    start_time_et = start_time - timedelta(hours=-4)
+    end_time_et = end_time - timedelta(hours=-4)
     data = {
-        "start": start_time.isoformat() + "Z",
-        "end": end_time.isoformat() + "Z",
+        "start": start_time_et.isoformat() + "Z",
+        "end": end_time_et.isoformat() + "Z",
         "description": entry["description"],
         "tagIds": [TAGS.get(entry["tag"], [])],
         "projectId": PROJECT_ID,
