@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import click
 import requests
+from tags import TAGS
 
 # MSE Practicum 2025
 WORKSPACE_ID = "68a7cf46e201a71118ccc40f"
@@ -15,20 +16,32 @@ PROJECT_ID = "68a7d0031fc540325e9abcd6"
 CLOCKIFY_API_URL = "https://api.clockify.me/api/v1"
 
 
-# Each entry: day (0=Mon), start, end, description
+# Each entry: day (0=Mon), start, end, description, tag
 WEEKLY_SCHEDULE = [
     # Monday
-    {"day": 0, "start": (11, 0), "end": (15, 0), "description": "core hours"},
+    {"day": 0, "start": (11, 0), "end": (15, 0), "description": "core hours", "tag": "Development"},
     # Tuesday
-    {"day": 1, "start": (12, 0), "end": (16, 0), "description": "core hours"},
+    {"day": 1, "start": (12, 0), "end": (16, 0), "description": "core hours", "tag": "Development"},
     # Wednesday
-    {"day": 2, "start": (10, 0), "end": (14, 0), "description": "core hours"},
-    {"day": 2, "start": (14, 0), "end": (16, 0), "description": "client meeting"},
-    {"day": 2, "start": (18, 0), "end": (20, 0), "description": "mentor meeting"},
+    {"day": 2, "start": (10, 0), "end": (14, 0), "description": "core hours", "tag": "Development"},
+    {
+        "day": 2,
+        "start": (14, 0),
+        "end": (16, 0),
+        "description": "client meeting",
+        "tag": "Client Meetings",
+    },
+    {
+        "day": 2,
+        "start": (18, 0),
+        "end": (20, 0),
+        "description": "mentor meeting",
+        "tag": "Mentor Meeting",
+    },
     # Thursday
-    {"day": 3, "start": (12, 0), "end": (16, 0), "description": "core hours"},
+    {"day": 3, "start": (12, 0), "end": (16, 0), "description": "core hours", "tag": "Development"},
     # Friday
-    {"day": 4, "start": (9, 0), "end": (13, 0), "description": "core hours"},
+    {"day": 4, "start": (9, 0), "end": (13, 0), "description": "core hours", "tag": "Development"},
 ]
 
 # Set up logging
@@ -62,6 +75,7 @@ def create_time_entry(entry, week_start, clockify_api_key, commit):
         "start": start_time.isoformat() + "Z",
         "end": end_time.isoformat() + "Z",
         "description": entry["description"],
+        "tagIds": [TAGS.get(entry["tag"], [])],
         "projectId": PROJECT_ID,
         "workspaceId": WORKSPACE_ID,
     }
