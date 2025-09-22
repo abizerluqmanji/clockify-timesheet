@@ -1,5 +1,6 @@
 """Script to log time entries for MSE Practicum 2025 on Clockify."""
 
+import logging
 from datetime import datetime, timedelta
 
 import click
@@ -30,13 +31,26 @@ WEEKLY_SCHEDULE = [
     {"day": 4, "start": (9, 0), "end": (13, 0), "description": "core hours"},
 ]
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 def get_week_start():
+    """Get the start of the current week (Monday)."""
     today = datetime.today()
     return today - timedelta(days=today.weekday())  # Monday
 
 
 def create_time_entry(entry, week_start, clockify_api_key, commit):
+    """Create a time entry on Clockify.
+
+    Args:
+        entry (dict): Dictionary with keys 'day', 'start', 'end', 'description'.
+        week_start (datetime): The start of the week (Monday).
+        clockify_api_key (str): Clockify API key.
+        commit (bool): If True, actually create the entry; if False, just print.
+    """
     entry_date = week_start + timedelta(days=entry["day"])
     start_time = entry_date.replace(
         hour=entry["start"][0], minute=entry["start"][1], second=0, microsecond=0
@@ -54,16 +68,16 @@ def create_time_entry(entry, week_start, clockify_api_key, commit):
     url = f"{CLOCKIFY_API_URL}/workspaces/{WORKSPACE_ID}/time-entries"
     header = {"X-Api-Key": clockify_api_key, "Content-Type": "application/json"}
 
-    print(f"Preparing to log: {start_time} - {end_time} ({entry['description']})")
+    logger.info(f"Preparing to log: {start_time} - {end_time} ({entry['description']})")
     if not commit:
         return
     response = requests.post(url, headers=header, json=data)
     if response.status_code == 201:
-        print(
+        logger.info(
             f"Logged: {start_time.strftime('%A %Y-%m-%d %H:%M')} - {end_time.strftime('%H:%M')} ({entry['description']})"
         )
     else:
-        print(f"Failed for {start_time.date()}: {response.text}")
+        logger.error(f"Failed for {start_time.date()}: {response.text}")
 
 
 @click.command()
