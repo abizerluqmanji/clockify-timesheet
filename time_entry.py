@@ -14,28 +14,54 @@ PROJECT_ID = "68a7d0031fc540325e9abcd6"
 CLOCKIFY_API_URL = "https://api.clockify.me/api/v1"
 
 
-def get_week_dates():
+# Each entry: day (0=Mon), start, end, description
+WEEKLY_SCHEDULE = [
+    # Monday
+    {"day": 0, "start": (11, 0), "end": (15, 0), "description": "core hours"},
+    # Tuesday
+    {"day": 1, "start": (12, 0), "end": (16, 0), "description": "core hours"},
+    # Wednesday
+    {"day": 2, "start": (10, 0), "end": (14, 0), "description": "core hours"},
+    {"day": 2, "start": (14, 0), "end": (16, 0), "description": "client meeting"},
+    {"day": 2, "start": (18, 0), "end": (20, 0), "description": "mentor meeting"},
+    # Thursday
+    {"day": 3, "start": (12, 0), "end": (16, 0), "description": "core hours"},
+    # Friday
+    {"day": 4, "start": (9, 0), "end": (13, 0), "description": "core hours"},
+]
+
+
+def get_week_start():
     today = datetime.today()
-    start = today - timedelta(days=today.weekday())  # Monday
-    return [start + timedelta(days=i) for i in range(5)]  # Mon-Fri
+    return today - timedelta(days=today.weekday())  # Monday
 
 
-def create_time_entry(date, clockify_api_key):
-    start_time = date.replace(hour=9, minute=0, second=0, microsecond=0)
-    end_time = date.replace(hour=12, minute=0, second=0, microsecond=0)
+def create_time_entry(entry, week_start, clockify_api_key, commit):
+    entry_date = week_start + timedelta(days=entry["day"])
+    start_time = entry_date.replace(
+        hour=entry["start"][0], minute=entry["start"][1], second=0, microsecond=0
+    )
+    end_time = entry_date.replace(
+        hour=entry["end"][0], minute=entry["end"][1], second=0, microsecond=0
+    )
     data = {
         "start": start_time.isoformat() + "Z",
         "end": end_time.isoformat() + "Z",
-        "description": "Core hours",
+        "description": entry["description"],
         "projectId": PROJECT_ID,
-        # "type": "REGULAR",
         "workspaceId": WORKSPACE_ID,
     }
     url = f"{CLOCKIFY_API_URL}/workspaces/{WORKSPACE_ID}/time-entries"
     header = {"X-Api-Key": clockify_api_key, "Content-Type": "application/json"}
+
+    print(f"Preparing to log: {start_time} - {end_time} ({entry['description']})")
+    if not commit:
+        return
     response = requests.post(url, headers=header, json=data)
     if response.status_code == 201:
-        print(f"Logged: {start_time.date()} 9am-12pm")
+        print(
+            f"Logged: {start_time.strftime('%A %Y-%m-%d %H:%M')} - {end_time.strftime('%H:%M')} ({entry['description']})"
+        )
     else:
         print(f"Failed for {start_time.date()}: {response.text}")
 
@@ -57,10 +83,9 @@ def cli(clockify_api_key, commit):
         clockify_api_key (str): Clockify API key.
         commit (bool): If set, actually create the time entries.
     """
-    if commit:
-        week_dates = get_week_dates()
-        for date in week_dates:
-            create_time_entry(date, clockify_api_key)
+    week_start = get_week_start()
+    for entry in WEEKLY_SCHEDULE:
+        create_time_entry(entry, week_start, clockify_api_key, commit)
 
 
 if __name__ == "__main__":
